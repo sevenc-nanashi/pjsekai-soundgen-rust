@@ -3,6 +3,8 @@ on:
   push:
     tags:
       - 'v*'
+    paths:
+      - '.github/workflows/build.yml'
 
 jobs:
   build:
@@ -31,4 +33,4 @@ jobs:
         with:
           file: target/release/${{ matrix.artifact_name }}
           overwrite: true
-          repo_token: ${{ secrets.REPO_TOKEN }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
