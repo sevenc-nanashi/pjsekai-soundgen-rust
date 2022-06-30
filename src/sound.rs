@@ -157,6 +157,33 @@ impl Sound {
             panic!("ffmpeg failed");
         }
     }
+
+    pub fn overlay_until(self, sound: &Sound, start: f32, end: f32) -> Sound {
+        let mut new_data = self.data.clone();
+        let start_index = (start * self.bitrate as f32) as usize * 2;
+        let mut end_index = (end * self.bitrate as f32) as usize * 2;
+        if (end_index - start_index) > sound.data.len() {
+            end_index = start_index + sound.data.len() - 1;
+        }
+        if end_index > new_data.len() {
+            new_data.resize(end_index, 0);
+        }
+        new_data.splice(
+            start_index..end_index,
+            sound
+                .data
+                .iter()
+                .cloned()
+                .zip(new_data.clone()[start_index..end_index].iter())
+                .map(|(a, b)| a.saturating_add(*b))
+                .collect::<Vec<i16>>(),
+        );
+
+        Sound {
+            data: new_data,
+            bitrate: self.bitrate,
+        }
+    }
 }
 
 impl std::ops::Mul<f32> for Sound {

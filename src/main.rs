@@ -4,11 +4,11 @@ pub mod sound;
 pub mod utils;
 
 extern crate getopts;
+use std::fs::File;
+use std::io::{ErrorKind, Read};
+use std::thread;
 use std::{collections::HashMap, sync::mpsc};
 use std::{env, fs};
-use std::thread;
-use std::fs::File;
-use std::io::{Read, ErrorKind};
 
 use console::show_title;
 use dialoguer::{theme::ColorfulTheme, Input, Select};
@@ -183,9 +183,10 @@ fn main() {
             let mut local_sound = Sound::empty(None);
             let lsound = sound.clone();
             drop(sound);
-            for time in times.clone() {
+            for (i, time) in times.clone().iter().enumerate() {
                 progress.inc(1);
-                local_sound = local_sound.overlay_at(&lsound, time.clone());
+                let next_time = times.get(i + 1).unwrap_or(&(*time + 5.0)) + args.offset;
+                local_sound = local_sound.overlay_until(&lsound, time.clone(), next_time);
             }
             progress.finish();
             ltx.send(local_sound).unwrap();
@@ -238,7 +239,7 @@ fn main() {
             ltx.send(local_sound).unwrap();
         }));
     }
-    let draw_thread = thread::spawn(move || {progresses.join().unwrap()});
+    let draw_thread = thread::spawn(move || progresses.join().unwrap());
     let mut merged_sounds = Sound::empty(None);
     for _ in 0..threads.len() {
         let received = rx.recv().unwrap();
