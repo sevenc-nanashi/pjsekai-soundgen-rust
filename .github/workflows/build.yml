@@ -1,0 +1,23 @@
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout repository"
+        uses: actions/checkout@v3
+      - name: "Setup Rust"
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+      - name: "Build"
+        run: |
+          cargo build --release
+      - name: Create Release
+        uses: ncipollo/release-action@v1.10.0
+        with:
+          artifacts: |
+            ./target/release/*.exe
