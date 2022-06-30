@@ -23,3 +23,4 @@ jobs:
         with:
           file: target/release/${{ matrix.artifact_name }}
           overwrite: true
+          repo_token: ${{ secrets.REPO_TOKEN }}
