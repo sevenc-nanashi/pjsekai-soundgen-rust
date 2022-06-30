@@ -5,7 +5,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     steps:
       - name: "Checkout repository"
         uses: actions/checkout@v3
@@ -16,9 +16,9 @@ jobs:
           toolchain: stable
       - name: "Build"
         run: |
-          cargo build --release
+          cargo build --release --out-dir target/release
       - name: Create Release
-        uses: ncipollo/release-action@v1.10.0
+        uses: svenstaro/upload-release-action@2.1.1
         with:
-          artifacts: |
-            ./target/release/*.exe
+          file: target/release/${{ matrix.artifact_name }}
+          overwrite: true
