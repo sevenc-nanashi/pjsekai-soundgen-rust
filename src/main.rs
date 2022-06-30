@@ -5,10 +5,10 @@ pub mod utils;
 
 extern crate getopts;
 use std::{collections::HashMap, sync::mpsc};
-use std::env;
+use std::{env, fs};
 use std::thread;
 use std::fs::File;
-use std::io::Read;
+use std::io::{Read, ErrorKind};
 
 use console::show_title;
 use dialoguer::{theme::ColorfulTheme, Input, Select};
@@ -102,6 +102,13 @@ fn load_bgm(id: &String, buf: &mut Vec<u8>) {
 fn main() {
     show_title();
     let args = parse_args();
+    if args.output == None {
+        fs::create_dir("./dist").unwrap_or_else(|err| {
+            if err.kind() != ErrorKind::AlreadyExists {
+                panic!("distフォルダを作成できませんでした。");
+            }
+        });
+    }
     let id: String;
     if args.id == None {
         println!("曲名、またはIDを入力してください。\nIDを入力する場合は、先頭に「#」を付けてください。");

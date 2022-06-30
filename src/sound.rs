@@ -152,11 +152,10 @@ impl Sound {
             .write_all(&self.data.iter().flat_map(|a| a.to_le_bytes().to_vec()).collect::<Vec<u8>>())
             .unwrap();
         drop(stdin);
-        // child.wait().unwrap();
-        // File::create(format!("{}.pcm", path))
-        //     .unwrap()
-        //     .write_all(&self.data.iter().flat_map(|a| a.to_le_bytes().to_vec()).collect::<Vec<u8>>())
-        //     .unwrap();
+        let output = child.wait_with_output().unwrap();
+        if !output.status.success() {
+            panic!("ffmpeg failed");
+        }
     }
 }
 
