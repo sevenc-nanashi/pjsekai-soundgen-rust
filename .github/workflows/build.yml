@@ -17,7 +17,7 @@ jobs:
           toolchain: stable
       - name: "Build"
         run: |
-          cargo build --release --out-dir target/release
+          cargo build --release
       - name: Create Release
         uses: svenstaro/upload-release-action@2.1.1
         with:
