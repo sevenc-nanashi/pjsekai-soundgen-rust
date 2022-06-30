@@ -17,6 +17,9 @@ jobs:
         with:
           profile: minimal
           toolchain: stable
+      - name: Resolve dependencies
+        run:
+          cargo update
       - name: Restore cache
         uses: actions/cache@v3
         with:
