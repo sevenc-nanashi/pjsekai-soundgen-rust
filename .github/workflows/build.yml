@@ -29,8 +29,7 @@ jobs:
         run: |
           cargo build --release
       - name: Create Release
-        uses: svenstaro/upload-release-action@2.1.1
+        uses: softprops/action-gh-release@v1
         with:
-          file: target/release/${{ matrix.artifact_name }}
-          overwrite: true
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          files: |
+            target/release/${{ matrix.artifact_name }}
