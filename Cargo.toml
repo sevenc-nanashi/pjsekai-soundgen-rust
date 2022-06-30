@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 dialoguer = "0.10.1"
+enable-ansi-support = "0.1.2"
 flate2 = "1.0.24"
 getopts = "0.2.21"
 indicatif = "0.16.2"

@@ -100,6 +100,10 @@ fn load_bgm(id: &String, buf: &mut Vec<u8>) {
 }
 
 fn main() {
+    enable_ansi_support::enable_ansi_support().unwrap_or_else(|_| {
+        println!("ANSIがサポートされていない環境です。");
+        std::process::exit(1);
+    });
     show_title();
     let args = parse_args();
     if args.output == None {
