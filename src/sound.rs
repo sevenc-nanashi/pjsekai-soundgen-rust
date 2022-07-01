@@ -163,7 +163,7 @@ impl Sound {
         let start_index = (start * self.bitrate as f32) as usize * 2;
         let mut end_index = (end * self.bitrate as f32) as usize * 2;
         if (end_index - start_index) > sound.data.len() {
-            end_index = start_index + sound.data.len() - 1;
+            end_index = start_index + sound.data.len();
         }
         if end_index > new_data.len() {
             new_data.resize(end_index, 0);
@@ -174,7 +174,7 @@ impl Sound {
                 .data
                 .iter()
                 .cloned()
-                .zip(new_data.clone()[start_index..end_index].iter())
+                .zip(new_data.clone()[start_index..end_index - 1].iter())
                 .map(|(a, b)| a.saturating_add(*b))
                 .collect::<Vec<i16>>(),
         );

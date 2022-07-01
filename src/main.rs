@@ -169,6 +169,8 @@ fn main() {
         let is_critical = note.starts_with("critical_");
         let (color_fg, color_bg) = if is_critical {
             ("yellow", "orange")
+        } else if note == "flick" {
+            ("red", "yellow")
         } else {
             ("cyan", "blue")
         };
