@@ -55,7 +55,7 @@ fn parse_args() -> Args {
         bgm_override: matches.opt_str("b"),
         bgm_volume: matches.opt_str("v").map(|s| s.parse::<f32>().unwrap()).unwrap_or(1.0),
         shift: matches.opt_str("s").map(|s| s.parse::<f32>().unwrap()).unwrap_or(0.0),
-        silent: matches.opt_present("s"),
+        silent: matches.opt_present("S"),
         output: matches.opt_str("o"),
         id: matches.free.get(1).map(|s| s.to_string()),
     }
