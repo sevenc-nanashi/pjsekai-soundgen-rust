@@ -24,7 +24,7 @@ static LOG_STYLE: &str = "[{elapsed_precise} / {eta_precise}] [{bar:50.{color_fg
 struct Args {
     bgm_override: Option<String>,
     bgm_volume: f32,
-    offset: f32,
+    shift: f32,
     silent: bool,
     output: Option<String>,
     id: Option<String>,
@@ -35,8 +35,8 @@ fn parse_args() -> Args {
     opts.optflag("h", "help", "ヘルプを表示して終了します。");
     opts.optopt("b", "bgm", "BGMを上書きします。", "PATH");
     opts.optopt("v", "bgm-volume", "BGMのボリュームを指定します。（1.0で等倍）", "VOLUME");
-    opts.optopt("o", "offset", "SEをずらします。", "OFFSET");
-    opts.optflag("s", "silent", "SEのみを生成します。");
+    opts.optopt("s", "shift", "SEをずらします。（秒単位）", "SECONDS");
+    opts.optflag("S", "silent", "SEのみを生成します。");
     opts.optopt("o", "output", "出力先を指定します。", "OUTPUT");
     let matches = match opts.parse(&env::args().collect::<Vec<_>>()) {
         Ok(m) => m,
@@ -54,7 +54,7 @@ fn parse_args() -> Args {
     Args {
         bgm_override: matches.opt_str("b"),
         bgm_volume: matches.opt_str("v").map(|s| s.parse::<f32>().unwrap()).unwrap_or(1.0),
-        offset: matches.opt_str("o").map(|s| s.parse::<f32>().unwrap()).unwrap_or(0.0),
+        shift: matches.opt_str("s").map(|s| s.parse::<f32>().unwrap()).unwrap_or(0.0),
         silent: matches.opt_present("s"),
         output: matches.opt_str("o"),
         id: matches.free.get(1).map(|s| s.to_string()),
@@ -149,7 +149,7 @@ fn main() {
     let bgm_raw = Sound::load(&bgm_buf);
     let bgm = bgm_raw * args.bgm_volume;
     println!("ノーツを読み込んでいます...");
-    let (tap_sound_timings, connect_note_timings) = level.get_sound_timings(args.offset);
+    let (tap_sound_timings, connect_note_timings) = level.get_sound_timings(args.shift);
     println!("ノーツのSEを読み込んでいます...");
     let mut threads = vec![];
 
@@ -187,7 +187,7 @@ fn main() {
             drop(sound);
             for (i, time) in times.clone().iter().enumerate() {
                 progress.inc(1);
-                let next_time = times.get(i + 1).unwrap_or(&(*time + 5.0)) + args.offset;
+                let next_time = times.get(i + 1).unwrap_or(&(*time + 5.0)) + args.shift;
                 local_sound = local_sound.overlay_until(&lsound, time.clone(), next_time);
             }
             progress.finish();
