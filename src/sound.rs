@@ -142,6 +142,8 @@ impl Sound {
             .arg("2")
             .arg("-i")
             .arg("-")
+            .arg("-qscale:a")
+            .arg("320k")
             .arg(path)
             .stdin(Stdio::piped())
             .stderr(Stdio::null())
