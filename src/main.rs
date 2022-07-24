@@ -28,6 +28,7 @@ struct Args {
     silent: bool,
     output: Option<String>,
     id: Option<String>,
+    notes_per_thread: Option<usize>,
 }
 
 fn parse_args() -> Args {
@@ -37,6 +38,7 @@ fn parse_args() -> Args {
     opts.optopt("v", "bgm-volume", "BGMのボリュームを指定します。（1.0で等倍）", "VOLUME");
     opts.optopt("s", "shift", "SEをずらします。（秒単位）", "SECONDS");
     opts.optflag("S", "silent", "SEのみを生成します。");
+    opts.optopt("n", "notes-per-thread", "スレッド毎のノーツ数を指定します。（β）", "NUMBER");
     opts.optopt("o", "output", "出力先を指定します。", "OUTPUT");
     let matches = match opts.parse(&env::args().collect::<Vec<_>>()) {
         Ok(m) => m,
@@ -58,6 +60,7 @@ fn parse_args() -> Args {
         silent: matches.opt_present("S"),
         output: matches.opt_str("o"),
         id: matches.free.get(1).map(|s| s.to_string()),
+        notes_per_thread: matches.opt_str("n").map(|s| s.parse::<usize>().unwrap()),
     }
 }
 
@@ -174,25 +177,46 @@ fn main() {
         } else {
             ("cyan", "blue")
         };
-        let progress = ProgressBar::new(times.len() as u64)
+        let mut progress = ProgressBar::new(times.len() as u64)
             .with_style(
                 style.template(LOG_STYLE.replace("{color_fg}", color_fg).replace("{color_bg}", color_bg).as_str()),
             )
             .with_message(NOTE_NAME_MAP.get(note.strip_prefix("critical_").unwrap_or(&note)).unwrap().clone());
+        let notes_per_thread = args.notes_per_thread.unwrap_or(times.len());
+        let thread_num: usize = if args.notes_per_thread.is_some() {
+            (times.len() as f32 / (notes_per_thread as f32)).ceil() as usize
+        } else {
+            1
+        };
+
+        if args.notes_per_thread.is_some() {
+            progress = progress.with_message(format!(
+                "{} ({})",
+                NOTE_NAME_MAP.get(note.strip_prefix("critical_").unwrap_or(&note)).unwrap().clone(),
+                thread_num
+            ));
+        }
+
         progresses.add(progress.clone());
-        let ltx = tx.clone();
-        threads.push(std::thread::spawn(move || {
-            let mut local_sound = Sound::empty(None);
+        for i in 0..thread_num as usize {
+            let lprogress = progress.clone();
             let lsound = sound.clone();
-            drop(sound);
-            for (i, time) in times.clone().iter().enumerate() {
-                progress.inc(1);
-                let next_time = times.get(i + 1).unwrap_or(&(*time + 5.0)) + args.shift;
-                local_sound = local_sound.overlay_until(&lsound, time.clone(), next_time);
-            }
-            progress.finish();
-            ltx.send(local_sound).unwrap();
-        }));
+            let ltx = tx.clone();
+            let ltimes = times[(i * notes_per_thread)..=((i + 1) * notes_per_thread).min(times.len() - 1)].to_vec();
+            threads.push(std::thread::spawn(move || {
+                let mut local_sound = Sound::empty(None);
+                for (i, time) in ltimes.iter().enumerate() {
+                    if i == notes_per_thread {
+                        continue;
+                    }
+                    lprogress.inc(1);
+                    let next_time = ltimes.get(i + 1).unwrap_or(&(*time + 5.0)) + args.shift;
+                    local_sound = local_sound.overlay_until(&lsound, time.clone(), next_time);
+                }
+                lprogress.finish(); // FIXME: 別スレッドの処理が終わったことを確認してからfinishする
+                ltx.send(local_sound).unwrap();
+            }));
+        }
     }
     for (note, times) in connect_note_timings.clone() {
         let mut events = vec![];
@@ -241,6 +265,7 @@ fn main() {
             ltx.send(local_sound).unwrap();
         }));
     }
+    println!("{}スレッドで処理を開始します。", threads.len());
     let draw_thread = thread::spawn(move || progresses.join().unwrap());
     let mut merged_sounds = Sound::empty(None);
     for _ in 0..threads.len() {
