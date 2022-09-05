@@ -159,7 +159,10 @@ fn main() {
     let note_sound_data = SOUND_MAP
         .iter()
         .map(|(_key, value)| {
-            let raw = Sound::load(&value.0.to_vec());
+            let raw = Sound {
+                data: value.0.to_vec().chunks_exact(2).into_iter().map(|a| i16::from_le_bytes([a[0], a[1]])).collect(),
+                bitrate: 48000,
+            };
             (value.1, raw)
         })
         .collect::<HashMap<_, _>>();
