@@ -29,10 +29,6 @@ pjsekai-soundgen-rust は、[SweetPotato](https://potato.purplepalette.net)の�
   作成：名無し｡ （ https://sevenc7c.com ）
 ```
 
-## 謝辞
-
-sounds フォルダ内は[mkpoli/paletteworks](https://github.com/mkpoli/paletteworks)からのものです。
-
 ## ライセンス
 
 ソースコードはGPLv3で公開されています。

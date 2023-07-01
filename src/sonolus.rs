@@ -50,7 +50,7 @@ impl LevelEntity {
             if data.name == key {
                 data.value?;
 
-                return Some(data.value.unwrap() as f32);
+                return Some(data.value.unwrap());
             }
         }
         None
