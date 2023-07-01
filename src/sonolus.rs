@@ -1,118 +1,107 @@
-use std::{collections::HashMap, io::Read};
-
-use flate2::read::GzDecoder;
 use serde::{Deserialize, Serialize};
 
-use crate::sound::SOUND_MAP;
-
 #[derive(Serialize, Deserialize)]
-pub struct SRL {
+pub struct Srl {
     pub hash: String,
     pub url: String,
+    pub r#type: String,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct LevelListResponse {
-    pub items: Vec<Level>,
+    pub items: Vec<LevelInfo>,
     #[serde(rename = "pageCount")]
     pub page_count: i32,
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct SingleLevelResponse {
-    pub item: Level,
+pub struct ItemResponse<T> {
+    pub item: T,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct LevelEntity {
-    pub archetype: i32,
-    pub data: Option<LevelEntityData>,
+    pub archetype: String,
+    pub data: Vec<LevelEntityData>,
+    pub r#ref: Option<String>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct LevelEntityData {
-    pub values: Vec<f32>,
+    pub name: String,
+    pub value: Option<f32>,
+    pub r#ref: Option<String>,
 }
 
 #[derive(Serialize, Deserialize)]
+pub struct EffectData {
+    pub clips: Vec<EffectClip>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct EffectClip {
+    pub name: String,
+    pub filename: String,
+}
+
+impl LevelEntity {
+    pub fn get_value(&self, key: &str) -> Option<f32> {
+        for data in self.data.iter() {
+            if data.name == key {
+                data.value?;
+
+                return Some(data.value.unwrap() as f32);
+            }
+        }
+        None
+    }
+
+    pub fn get_ref_raw(&self, key: &str) -> Option<String> {
+        for data in self.data.iter() {
+            if data.name == key {
+                let r#ref = data.r#ref.as_ref()?;
+                return Some(r#ref.to_string());
+            }
+        }
+        None
+    }
+
+    pub fn get_ref(&self, entities: &[LevelEntity], key: &str) -> Option<LevelEntity> {
+        let ref_raw = self.get_ref_raw(key)?;
+        for entity in entities.iter() {
+            if entity.r#ref.is_some() && entity.r#ref.as_ref().unwrap() == &ref_raw {
+                return Some(entity.clone());
+            }
+        }
+        None
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct LevelData {
     pub entities: Vec<LevelEntity>,
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct Level {
+pub struct LevelInfo {
     pub title: String,
     pub artists: String,
     pub author: String,
     pub name: String,
-    pub bgm: SRL,
-    pub data: SRL,
+    pub rating: i32,
+    pub bgm: Srl,
+    pub data: Srl,
+    pub engine: EngineInfo,
 }
 
-#[derive(Debug)]
-pub enum LevelError {
-    NotFound,
-    InvalidFormat,
+#[derive(Serialize, Deserialize)]
+pub struct EngineInfo {
+    pub version: i32,
+    pub effect: EffectInfo,
 }
 
-impl Level {
-    pub fn fetch(id: &str) -> Result<Level, LevelError> {
-        let url = format!("https://servers-legacy.purplepalette.net/levels/{}", id);
-        let resp = reqwest::blocking::get(&url).unwrap();
-        if resp.status() != reqwest::StatusCode::OK {
-            return Err(LevelError::NotFound);
-        }
-        let buf: &[u8] = &resp.bytes().unwrap()[..];
-        let level: SingleLevelResponse = serde_json::from_slice(&buf).unwrap();
-        Ok(level.item)
-    }
-
-    pub fn get_sound_timings(self, offset: f32) -> (HashMap<String, Vec<f32>>, HashMap<String, Vec<(f32, f32)>>) {
-        let client = reqwest::blocking::Client::new();
-        let data = client
-            .get(format!("https://servers-legacy.purplepalette.net{}", self.data.url).as_str())
-            .send()
-            .unwrap()
-            .bytes()
-            .unwrap();
-        let mut level_data_raw = GzDecoder::new(&data[..]);
-        let mut buf = Vec::new();
-        level_data_raw.read_to_end(&mut buf).unwrap();
-        let level_data = serde_json::from_str::<LevelData>(&String::from_utf8_lossy(&buf)).unwrap();
-        let mut timings: HashMap<String, Vec<f32>> = HashMap::new();
-        let mut connect_timings: HashMap<String, Vec<(f32, f32)>> = HashMap::new();
-        for note in level_data.entities.iter() {
-            let sound_map_data = SOUND_MAP.get(&note.archetype);
-            if sound_map_data.is_none() {
-                continue;
-            }
-            let sound_data = sound_map_data.unwrap().1.to_string();
-            if sound_data.contains("connect") {
-                if !connect_timings.contains_key(&sound_data) {
-                    connect_timings.insert(sound_data.clone(), vec![]);
-                }
-                connect_timings.get_mut(&sound_data).unwrap().push((
-                    note.data.as_ref().unwrap().values[0] + offset,
-                    note.data.as_ref().unwrap().values[3] + offset,
-                ));
-                continue;
-            }
-            if !timings.contains_key(&sound_data) {
-                timings.insert(sound_data.clone(), vec![]);
-            }
-            let values = note.data.as_ref().unwrap().values.clone();
-            timings.get_mut(&sound_data).unwrap().push(values[0] + offset);
-        }
-        timings.values_mut().for_each(|v| {
-            v.sort_by(|a, b| a.partial_cmp(b).unwrap());
-            v.dedup()
-        });
-        (timings, connect_timings)
-    }
-}
-
-impl std::fmt::Display for Level {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{} : {} / {} #{}", self.title, self.artists, self.author, self.name)
-    }
+#[derive(Serialize, Deserialize)]
+pub struct EffectInfo {
+    pub audio: Srl,
+    pub data: Srl,
 }

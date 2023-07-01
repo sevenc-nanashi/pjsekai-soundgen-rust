@@ -1,46 +1,51 @@
 use std::collections::HashMap;
+use std::io::Read;
 
-use std::io::Write;
+use std::io::{Cursor, Write};
 use std::process::{Command, Stdio};
 
+use anyhow::{anyhow, Result};
 use once_cell::sync::Lazy;
+use zip::ZipArchive;
 
-pub static SOUND_MAP: Lazy<HashMap<i32, (&[u8], &'static str)>> = Lazy::new(|| {
+use crate::sonolus::EffectData;
+
+pub static SOUND_MAP: Lazy<HashMap<&'static str, &'static str>> = Lazy::new(|| {
     HashMap::from([
-        (3, (&include_bytes!("../sounds/tap.pcm")[..], "tap")),
-        (4, (&include_bytes!("../sounds/flick.pcm")[..], "flick")),
-        (5, (&include_bytes!("../sounds/tap.pcm")[..], "slide_tap")),
-        (6, (&include_bytes!("../sounds/tick.pcm")[..], "slide_tick")),
-        (7, (&include_bytes!("../sounds/tap.pcm")[..], "slide_tap")),
-        (8, (&include_bytes!("../sounds/flick.pcm")[..], "flick")),
-        (9, (&include_bytes!("../sounds/connect.pcm")[..], "connect")),
-        (10, (&include_bytes!("../sounds/critical_tap.pcm")[..], "critical_tap")),
-        (11, (&include_bytes!("../sounds/critical_flick.pcm")[..], "critical_flick")),
-        (12, (&include_bytes!("../sounds/tap.pcm")[..], "slide_tap")),
-        (13, (&include_bytes!("../sounds/critical_tick.pcm")[..], "critical_slide_tick")),
-        (14, (&include_bytes!("../sounds/tap.pcm")[..], "slide_tap")),
-        (15, (&include_bytes!("../sounds/critical_flick.pcm")[..], "critical_flick")),
-        (16, (&include_bytes!("../sounds/critical_connect.pcm")[..], "critical_connect")),
+        ("NormalTapNote", "#PERFECT"),
+        ("CriticalTapNote", "Sekai Critical Tap"),
+        ("NormalFlickNote", "#PERFECT_ALTERNATIVE"),
+        ("CriticalFlickNote", "Sekai Critical Flick"),
+        ("NormalSlideStartNote", "#PERFECT"),
+        ("CriticalSlideStartNote", "#PERFECT"),
+        ("NormalSlideEndNote", "#PERFECT"),
+        ("CriticalSlideEndNote", "#PERFECT"),
+        ("NormalSlideEndFlickNote", "#PERFECT_ALTERNATIVE"),
+        ("CriticalSlideEndFlickNote", "Sekai Critical Flick"),
+        ("NormalSlideTickNote", "Sekai Tick"),
+        ("CriticalSlideTickNote", "Sekai Critical Tick"),
+        ("NormalAttachedSlideTickNote", "Sekai Tick"),
+        ("CriticalAttachedSlideTickNote", "Sekai Critical Tick"),
+        ("NormalTraceNote", "Sekai+ Normal Trace"),
+        ("CriticalTraceNote", "Sekai+ Critical Trace"),
+        ("NormalTraceFlickNote", "Sekai+ Normal Trace Flick"),
+        ("CriticalTraceFlickNote", "Sekai+ Critical Trace Flick"),
+        ("NonDirectionalTraceFlickNote", "Sekai+ Normal Trace Flick"),
+        ("TraceSlideStartNote", "Sekai+ Normal Trace"),
+        ("TraceSlideEndNote", "Sekai+ Normal Trace"),
     ])
 });
+pub static LOOP_SOUND_MAP: Lazy<HashMap<&'static str, &'static str>> =
+    Lazy::new(|| HashMap::from([("NormalSlideConnector", "#HOLD"), ("CriticalSlideConnector", "Sekai Critical Hold")]));
 
-pub static NOTE_NAME_MAP: Lazy<HashMap<&'static str, &'static str>> = Lazy::new(|| {
-    HashMap::from([
-        ("tap", "タップ"),
-        ("flick", "フリック"),
-        ("slide_tap", "スライド始点/終点"),
-        ("slide_tick", "スライド中継点"),
-        ("connect", "ロング"),
-    ])
-});
-
+#[derive(Debug, Clone)]
 pub struct Sound {
     pub data: Vec<i16>,
     pub bitrate: u32,
 }
 
 impl Sound {
-    pub fn load(buf: &Vec<u8>) -> Sound {
+    pub fn load(buf: &[u8]) -> Sound {
         let mut child = Command::new("ffmpeg")
             .arg("-i")
             .arg("-")
@@ -56,7 +61,7 @@ impl Sound {
             .stderr(Stdio::null())
             .spawn()
             .unwrap();
-        let local_buf = buf.clone();
+        let local_buf = buf.to_vec();
         let mut stdin = child.stdin.take().unwrap();
         let thread = std::thread::spawn(move || {
             stdin.write_all(&local_buf).unwrap();
@@ -200,11 +205,21 @@ impl std::ops::Mul<f32> for Sound {
     }
 }
 
-impl std::clone::Clone for Sound {
-    fn clone(&self) -> Self {
-        Sound {
-            data: self.data.clone(),
-            bitrate: self.bitrate,
+#[derive(Debug, Clone)]
+pub struct Effect {
+    pub audio: HashMap<String, Sound>,
+}
+
+impl Effect {
+    pub fn new(data: EffectData, mut zip: ZipArchive<Cursor<Vec<u8>>>) -> Result<Self> {
+        let mut audio = HashMap::new();
+        for clip in data.clips {
+            let mut file =
+                zip.by_name(&clip.filename).map_err(|_| anyhow!("効果音のファイルが見つかりませんでした"))?;
+            let mut buf = vec![];
+            file.read_to_end(&mut buf).map_err(|_| anyhow!("効果音のファイルが読み込めませんでした"))?;
+            audio.insert(clip.name, Sound::load(&buf));
         }
+        Ok(Self { audio })
     }
 }
