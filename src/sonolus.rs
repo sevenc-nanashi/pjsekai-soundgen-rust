@@ -79,6 +79,8 @@ impl LevelEntity {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LevelData {
+    #[serde(rename = "bgmOffset")]
+    pub bgm_offset: f32,
     pub entities: Vec<LevelEntity>,
 }
 

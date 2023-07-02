@@ -156,7 +156,7 @@ pub async fn get_sound_timings(level: &Level, offset: f32) -> Result<Timing> {
         }
     }
     bpm_changes.sort_by(|a, b| a.beat.partial_cmp(&b.beat).unwrap());
-    let beat_to_time = |beat: f32| -> f32 {
+    let resolve_time = |beat: f32| -> f32 {
         let mut time = 0.0;
         let mut last_bpm = bpm_changes[0].bpm;
         let mut last_beat = 0.0;
@@ -169,7 +169,7 @@ pub async fn get_sound_timings(level: &Level, offset: f32) -> Result<Timing> {
             last_beat = bpm_change.beat;
         }
         time += (beat - last_beat) * 60.0 / last_bpm;
-        time
+        time + level.data.bgm_offset + offset
     };
     for note in level.data.entities.iter() {
         let Some(sound_map_data) = SOUND_MAP.get(&note.archetype.as_str()) else {
@@ -179,11 +179,11 @@ pub async fn get_sound_timings(level: &Level, offset: f32) -> Result<Timing> {
         if timings.get(&sound_data).is_none() {
             timings.insert(sound_data.clone(), vec![]);
         }
-        let time = beat_to_time(note.get_value("#BEAT").ok_or_else(|| {
+        let time = resolve_time(note.get_value("#BEAT").ok_or_else(|| {
             debug!(&note);
             anyhow::anyhow!("譜面データが壊れています：#BEATがありません")
         })?);
-        timings.get_mut(&sound_data).unwrap().push(time + offset);
+        timings.get_mut(&sound_data).unwrap().push(time);
     }
     let mut slide_connectors: HashMap<String, Vec<(f32, i32)>> = HashMap::new();
     for note in level.data.entities.iter() {
@@ -197,19 +197,19 @@ pub async fn get_sound_timings(level: &Level, offset: f32) -> Result<Timing> {
         let tail = note
             .get_ref(&level.data.entities, "tail")
             .ok_or_else(|| anyhow::anyhow!("譜面データが壊れています：SlideConnectorにtailがありません"))?;
-        let head_time = beat_to_time(
+        let head_time = resolve_time(
             head.get_value("#BEAT")
                 .ok_or_else(|| anyhow::anyhow!("譜面データが壊れています：SlideConnectorのheadに#BEATがありません"))?,
         );
-        let tail_time = beat_to_time(
+        let tail_time = resolve_time(
             tail.get_value("#BEAT")
                 .ok_or_else(|| anyhow::anyhow!("譜面データが壊れています：SlideConnectorのtailに#BEATがありません"))?,
         );
         if slide_connectors.get(&key).is_none() {
             slide_connectors.insert(key.clone(), vec![]);
         }
-        slide_connectors.get_mut(&key).unwrap().push((head_time + offset, 1));
-        slide_connectors.get_mut(&key).unwrap().push((tail_time + offset, -1));
+        slide_connectors.get_mut(&key).unwrap().push((head_time, 1));
+        slide_connectors.get_mut(&key).unwrap().push((tail_time, -1));
     }
     for (key, changes) in slide_connectors.iter() {
         let mut slide_count = 0;
