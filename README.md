@@ -9,7 +9,7 @@ pjsekai-soundgen-rust は、[SweetPotato](https://potato.purplepalette.net)の�
 ## 利用方法
 
 0. ffmpeg をインストールする。
-1. 右のReleasesからpjsekai-soundgen-rust.exeをダウンロードする。
+1. [Releases](https://github.com/sevenc-nanashi/pjsekai-soundgen-rust/releases)からpjsekai-soundgen-rust.exeをダウンロードする。
 
 ## 注意
 
