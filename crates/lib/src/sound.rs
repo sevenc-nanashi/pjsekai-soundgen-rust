@@ -46,9 +46,13 @@ pub struct Sound {
 
 impl Sound {
     pub fn load(buf: &[u8]) -> Sound {
+        Sound::load_with_args(buf, &[])
+    }
+    pub fn load_with_args(buf: &[u8], args: &[String]) -> Sound {
         let mut child = Command::new("ffmpeg")
             .arg("-i")
             .arg("-")
+            .args(args)
             .arg("-ac")
             .arg("2")
             .arg("-f")
@@ -73,7 +77,7 @@ impl Sound {
         }
         let output_buf = output.stdout;
         Sound {
-            data: output_buf.chunks_exact(2).into_iter().map(|a| i16::from_le_bytes([a[0], a[1]])).collect(),
+            data: output_buf.chunks_exact(2).map(|a| i16::from_le_bytes([a[0], a[1]])).collect(),
             bitrate: 48000,
         }
     }
