@@ -33,6 +33,7 @@ pub fn show_title() {
     }
 }
 
+#[inline]
 pub fn colored_log(prefix: &str, msg: &str, escape_code: &str) {
     let message = format!("{}{}) {}{}", escape_code, prefix, rgb!(), msg);
     if ANSI.load(std::sync::atomic::Ordering::Relaxed) {

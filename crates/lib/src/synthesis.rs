@@ -1,8 +1,7 @@
 use crate::level::Level;
 use crate::sound::SOUND_MAP;
-use crate::sound::{Effect, LOOP_SOUND_MAP};
+use crate::sound::{Effect, Sound, LOOP_SOUND_MAP};
 use crate::utils::debug;
-use crate::Sound;
 
 use anyhow::{ensure, Result};
 use itertools::Itertools;

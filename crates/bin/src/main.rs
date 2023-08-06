@@ -1,9 +1,4 @@
 mod console;
-mod level;
-mod server;
-mod sonolus;
-mod sound;
-mod synthesis;
 mod utils;
 
 use dialoguer::{theme::ColorfulTheme, Input};
@@ -17,11 +12,10 @@ use tokio::fs::File;
 use tokio::io::AsyncReadExt;
 
 use crate::console::show_title;
-use crate::server::Server;
-use crate::sonolus::*;
-use crate::sound::Sound;
-use crate::synthesis::Progress;
 use crate::utils::rgb;
+use pjsekai_soundgen_core::server::Server;
+use pjsekai_soundgen_core::sound::Sound;
+use pjsekai_soundgen_core::synthesis::Progress;
 
 static LOG_STYLE: &str = "[{elapsed_precise} / {eta_precise}] [{bar:50.{color_fg}/{color_bg}}] {pos:>7}/{len:7} {msg}";
 
@@ -44,7 +38,7 @@ fn parse_args() -> Args {
     opts.optflag("S", "silent", "SEのみを生成します。");
     opts.optopt("n", "notes-per-thread", "スレッド毎のノーツ数を指定します。", "NUMBER");
     opts.optopt("o", "output", "出力先を指定します。", "OUTPUT");
-    let matches = match opts.parse(&env::args().collect::<Vec<_>>()) {
+    let matches = match opts.parse(env::args().collect::<Vec<_>>()) {
         Ok(m) => m,
         Err(f) => {
             println!("{}", f);
@@ -124,7 +118,7 @@ async fn main() {
     let bgm = Sound::load(&bgm_buf) * args.bgm_volume;
 
     console::info("譜面を読み込んでいます...");
-    let timing = match synthesis::get_sound_timings(&level, args.shift).await {
+    let timing = match pjsekai_soundgen_core::get_sound_timings(&level, args.shift).await {
         Ok(t) => t,
         Err(err) => {
             console::error(&err.to_string());
@@ -141,8 +135,10 @@ async fn main() {
     let progresses = MultiProgress::new();
     let mut progresses_map: HashMap<String, ProgressBar> = HashMap::new();
     let style = ProgressStyle::default_bar().progress_chars("- ");
-    let rx = synthesis::synthesis(&timing, &effect, args.notes_per_thread).await;
-    let Progress::Info { threads } = rx.recv().unwrap() else { unreachable!()};
+    let rx = pjsekai_soundgen_core::synthesis(&timing, &effect, args.notes_per_thread).await;
+    let Progress::Info { threads } = rx.recv().unwrap() else {
+        unreachable!()
+    };
     console::info(format!("{}スレッドで合成を開始します。", threads.len()).as_str());
     for (name, info) in threads.iter() {
         let progress =

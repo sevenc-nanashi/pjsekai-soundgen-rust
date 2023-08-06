@@ -1,12 +1,7 @@
 use crate::level::Level;
-use crate::sonolus::EffectData;
-use crate::sonolus::EffectInfo;
-use crate::sonolus::Srl;
+use crate::sonolus::{EffectData, EffectInfo, ItemResponse, LevelData, LevelInfo, Srl};
 use crate::sound::Effect;
 use crate::utils::debug;
-use crate::ItemResponse;
-use crate::LevelData;
-use crate::LevelInfo;
 
 use anyhow::Result;
 use dirs::cache_dir;
