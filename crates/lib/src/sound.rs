@@ -26,13 +26,15 @@ pub static SOUND_MAP: Lazy<HashMap<&'static str, &'static str>> = Lazy::new(|| {
         ("CriticalSlideTickNote", "Sekai Critical Tick"),
         ("NormalAttachedSlideTickNote", "Sekai Tick"),
         ("CriticalAttachedSlideTickNote", "Sekai Critical Tick"),
-        ("NormalTraceNote", "Sekai+ Normal Trace"),
-        ("CriticalTraceNote", "Sekai+ Critical Trace"),
-        ("NormalTraceFlickNote", "Sekai+ Normal Trace Flick"),
-        ("CriticalTraceFlickNote", "Sekai+ Critical Trace Flick"),
-        ("NonDirectionalTraceFlickNote", "Sekai+ Normal Trace Flick"),
-        ("TraceSlideStartNote", "Sekai+ Normal Trace"),
-        ("TraceSlideEndNote", "Sekai+ Normal Trace"),
+        ("NormalTraceNote", "Sekai Normal Trace"),
+        ("CriticalTraceNote", "Sekai Critical Trace"),
+        ("NormalTraceFlickNote", "#PERFECT_ALTERNATIVE"),
+        ("CriticalTraceFlickNote", "Sekai Critical Flick"),
+        ("NonDirectionalTraceFlickNote", "Sekai Normal Trace Flick"),
+        ("NormalTraceSlideStartNote", "Sekai Normal Trace"),
+        ("CriticalTraceSlideStartNote", "Sekai Critical Trace"),
+        ("NormalTraceSlideEndNote", "Sekai Normal Trace"),
+        ("CriticalTraceSlideEndNote", "Sekai Critical Trace"),
     ])
 });
 pub static LOOP_SOUND_MAP: Lazy<HashMap<&'static str, &'static str>> =

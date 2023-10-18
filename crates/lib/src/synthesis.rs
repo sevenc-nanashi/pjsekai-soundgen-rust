@@ -68,28 +68,14 @@ static COLOR_MAP: Lazy<HashMap<&'static str, ClipColor>> = Lazy::new(|| {
             },
         ),
         (
-            "Sekai+ Normal Trace",
+            "Sekai Normal Trace",
             ClipColor {
-                fg: "black",
-                bg: "white",
+                fg: "green",
+                bg: "blue",
             },
         ),
         (
-            "Sekai+ Critical Trace",
-            ClipColor {
-                fg: "yellow",
-                bg: "orange",
-            },
-        ),
-        (
-            "Sekai+ Normal Trace Flick",
-            ClipColor {
-                fg: "red",
-                bg: "yellow",
-            },
-        ),
-        (
-            "Sekai+ Critical Trace Flick",
+            "Sekai Critical Trace",
             ClipColor {
                 fg: "yellow",
                 bg: "orange",
@@ -107,10 +93,8 @@ static NAME_MAP: Lazy<HashMap<&'static str, &'static str>> = Lazy::new(|| {
         ("Sekai Critical Hold", "金ホールド"),
         ("Sekai Critical Flick", "金フリック"),
         ("Sekai Critical Tick", "金スライド中継点"),
-        ("Sekai+ Normal Trace", "トレース"),
-        ("Sekai+ Critical Trace", "金トレース"),
-        ("Sekai+ Normal Trace Flick", "トレースフリック"),
-        ("Sekai+ Critical Trace Flick", "金トレースフリック"),
+        ("Sekai Normal Trace", "通常トレース"),
+        ("Sekai Critical Trace", "金トレース"),
     ])
 });
 struct BpmChange {
