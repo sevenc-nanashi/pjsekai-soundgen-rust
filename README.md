@@ -1,6 +1,6 @@
 # pjsekai-soundgen-rust / Rust版プロセカ風譜面音声生成ツール
 
-pjsekai-soundgen-rust は、[SweetPotato](https://potato.purplepalette.net)の譜面から音声を生成するツール、[pjsekai-soundgen](https://github.com/sevenc-nanashi/pjsekai-soundgen)のRust版です。
+pjsekai-soundgen-rust は、[Potato Leaves](https://github.com/sevenc-nanashi/potato_leaves)や[Chart Cyanvas](https://cc.sevenc7c.com)の譜面から音声を生成するツールです。
 
 ## 必須事項
 
