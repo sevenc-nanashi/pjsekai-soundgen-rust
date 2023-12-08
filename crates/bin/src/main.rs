@@ -1,21 +1,21 @@
 mod console;
 mod utils;
 
+use crate::{console::show_title, utils::rgb};
 use dialoguer::{theme::ColorfulTheme, Input};
 use getopts::Options;
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
-use std::collections::HashMap;
-use std::io::ErrorKind;
-use std::thread;
-use std::{env, fs};
-use tokio::fs::File;
-use tokio::io::AsyncReadExt;
-
-use crate::console::show_title;
-use crate::utils::rgb;
-use pjsekai_soundgen_core::server::Server;
-use pjsekai_soundgen_core::sound::Sound;
-use pjsekai_soundgen_core::synthesis::Progress;
+use octocrab::Octocrab;
+use pjsekai_soundgen_core::{server::Server, sound::Sound, synthesis::Progress};
+use std::{
+    collections::HashMap,
+    io::ErrorKind,
+    thread, {env, fs},
+};
+use tokio::{
+    fs::File,
+    io::{AsyncReadExt, AsyncWriteExt},
+};
 
 static LOG_STYLE: &str = "[{elapsed_precise} / {eta_precise}] [{bar:50.{color_fg}/{color_bg}}] {pos:>7}/{len:7} {msg}";
 
@@ -62,11 +62,45 @@ fn parse_args() -> Args {
     }
 }
 
+async fn should_check_update() -> bool {
+    let executable_path = process_path::get_executable_path().unwrap();
+    let flag_path = executable_path.parent().unwrap().join(".update-check");
+    if !flag_path.exists() {
+        return true;
+    }
+    let flag = fs::read_to_string(flag_path).unwrap();
+    let now = chrono::Local::now();
+    let last_checked = chrono::DateTime::parse_from_rfc3339(flag.as_str()).unwrap();
+    if now.signed_duration_since(last_checked).num_days() >= 1 {
+        return true;
+    }
+    false
+}
+
+async fn check_update() {
+    let executable_path = process_path::get_executable_path().unwrap();
+    let flag_path = executable_path.parent().unwrap().join(".update-check");
+    let mut file = File::create(flag_path).await.unwrap();
+    let now = chrono::Local::now();
+    file.write_all(now.to_rfc3339().as_bytes()).await.unwrap();
+    let octocrab = Octocrab::builder().build().unwrap();
+    let release = octocrab.repos("sevenc-nanashi", "pjsekai-soundgen-rust").releases().get_latest().await.unwrap();
+    let version = release.tag_name.trim_start_matches('v');
+    let current_version = env!("CARGO_PKG_VERSION");
+    if version != current_version {
+        console::info(&format!("新しいバージョンがリリースされています：v{} -> v{}", current_version, version));
+        console::info(&format!("ダウンロード：{}", release.html_url));
+    }
+}
+
 #[tokio::main]
 async fn main() {
     let ansi = enable_ansi_support::enable_ansi_support().is_ok();
     console::ANSI.store(ansi, std::sync::atomic::Ordering::SeqCst);
     show_title();
+    if should_check_update().await {
+        check_update().await;
+    }
     let args = parse_args();
     if args.output.is_none() {
         fs::create_dir("./dist").unwrap_or_else(|err| {
