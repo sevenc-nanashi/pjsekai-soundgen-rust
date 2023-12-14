@@ -11,7 +11,7 @@ pjsekai-soundgen-rust は、[Potato Leaves](https://github.com/sevenc-nanashi/po
 0. ffmpeg をインストールする。
 1. [Releases](https://github.com/sevenc-nanashi/pjsekai-soundgen-rust/releases)からpjsekai-soundgen-rust.exeをダウンロードする。
 
-## 注意
+## 利用規約
 
 動画の概要欄などに、自分（=名無し｡）の
 
