@@ -4,7 +4,6 @@ use serde::{Deserialize, Serialize};
 pub struct Srl {
     pub hash: String,
     pub url: String,
-    pub r#type: String,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -23,7 +22,7 @@ pub struct ItemResponse<T> {
 pub struct LevelEntity {
     pub archetype: String,
     pub data: Vec<LevelEntityData>,
-    pub r#ref: Option<String>,
+    pub name: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -69,7 +68,7 @@ impl LevelEntity {
     pub fn get_ref(&self, entities: &[LevelEntity], key: &str) -> Option<LevelEntity> {
         let ref_raw = self.get_ref_raw(key)?;
         for entity in entities.iter() {
-            if entity.r#ref.is_some() && entity.r#ref.as_ref().unwrap() == &ref_raw {
+            if entity.name.as_ref().is_some_and(|name| name == &ref_raw) {
                 return Some(entity.clone());
             }
         }

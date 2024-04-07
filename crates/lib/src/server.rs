@@ -61,20 +61,17 @@ impl Server {
         let client = reqwest::Client::new();
         let url = self.merge_url(&srl.url);
         debug!(&url);
-        let bgm_response = client
-            .get(url)
-            .send()
-            .await
-            .map_err(|e| anyhow::anyhow!("{}の取得に失敗しました。: {}", srl.r#type, e))?;
+        let bgm_response =
+            client.get(url).send().await.map_err(|e| anyhow::anyhow!("データの取得に失敗しました。: {}", e))?;
 
         if !bgm_response.status().is_success() {
-            return Err(anyhow::anyhow!("{}の取得に失敗しました。", srl.r#type));
+            return Err(anyhow::anyhow!("データの取得に失敗しました。"));
         }
 
         let bytes = bgm_response
             .bytes()
             .await
-            .map_err(|e| anyhow::anyhow!("{}の取得に失敗しました。: {}", srl.r#type, e))?
+            .map_err(|e| anyhow::anyhow!("データの取得に失敗しました。: {}", e))?
             .to_vec();
 
         tokio::fs::create_dir_all(CACHE_DIR.as_ref()).await?;
